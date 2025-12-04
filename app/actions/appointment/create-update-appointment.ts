@@ -182,33 +182,41 @@ export async function createOrUpdateAppointmentAction(
     const startTimeDate = new Date(`1970-01-01T${validatedData.startTime}:00`);
     const endTimeDate = new Date(`1970-01-01T${validatedData.endTime}:00`);
 
-    // Verificar disponibilidad del staff en esa fecha y hora
-    const dayOfWeek = validatedData.appointmentDate.getDay();
+    // Solo verificar disponibilidad y conflictos si el estado es pending o confirmed
+    // No validar para estados cancelled, completed o no_show
+    const needsScheduleValidation = ["pending", "confirmed"].includes(
+      validatedData.status
+    );
 
-    const staffSchedule = await prisma.schedule.findFirst({
-      where: {
-        staffId: validatedData.staffId,
-        dayOfWeek: dayOfWeek,
-        available: true,
-        startTime: { lte: startTimeDate },
-        endTime: { gte: endTimeDate },
-      },
-    });
+    if (needsScheduleValidation) {
+      // Verificar disponibilidad del staff en esa fecha y hora
+      const dayOfWeek = validatedData.appointmentDate.getDay();
 
-    if (!staffSchedule) {
-      console.log(
-        "⚠️ Staff no disponible en ese horario:",
-        validatedData.staffId
-      );
-      return {
-        success: false,
-        message:
-          "El miembro del staff no tiene disponibilidad en ese día y horario",
-      };
+      const staffSchedule = await prisma.schedule.findFirst({
+        where: {
+          staffId: validatedData.staffId,
+          dayOfWeek: dayOfWeek,
+          available: true,
+          startTime: { lte: startTimeDate },
+          endTime: { gte: endTimeDate },
+        },
+      });
+
+      if (!staffSchedule) {
+        console.log(
+          "⚠️ Staff no disponible en ese horario:",
+          validatedData.staffId
+        );
+        return {
+          success: false,
+          message:
+            "El miembro del staff no tiene disponibilidad en ese día y horario",
+        };
+      }
     }
 
-    // Verificar conflictos de citas para el staff
-    if (!isUpdate) {
+    // Verificar conflictos de citas para el staff (solo si es pending o confirmed)
+    if (needsScheduleValidation && !isUpdate) {
       const conflictingAppointment = await prisma.appointment.findFirst({
         where: {
           staffId: validatedData.staffId,
@@ -249,8 +257,9 @@ export async function createOrUpdateAppointmentAction(
           message: `El staff ya tiene una cita confirmada o pendiente en ese horario`,
         };
       }
-    } else {
+    } else if (needsScheduleValidation) {
       // En actualización, verificar conflictos excluyendo la cita actual
+      // Solo si el nuevo estado requiere validación
       const conflictingAppointment = await prisma.appointment.findFirst({
         where: {
           staffId: validatedData.staffId,
