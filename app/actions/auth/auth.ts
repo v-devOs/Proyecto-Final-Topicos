@@ -42,11 +42,19 @@ export async function loginAction(formData: FormData): Promise<LoginResponse> {
       userType: formData.get("userType"),
     };
 
+    console.log("📨 Datos recibidos en loginAction:", {
+      email: rawData.email,
+      userType: rawData.userType,
+      hasPassword: !!rawData.password,
+      passwordLength: rawData.password ? String(rawData.password).length : 0,
+    });
+
     // Validar con Zod
     const validatedData = loginSchema.safeParse(rawData);
 
     if (!validatedData.success) {
       const firstError = validatedData.error.issues[0];
+      console.log("❌ Error de validación:", firstError.message);
       return {
         success: false,
         message: firstError.message,
@@ -54,6 +62,7 @@ export async function loginAction(formData: FormData): Promise<LoginResponse> {
     }
 
     const { email, password, userType } = validatedData.data;
+    console.log("✅ Datos validados correctamente:", { email, userType });
 
     // Buscar usuario según el tipo
     let user: {
@@ -91,16 +100,31 @@ export async function loginAction(formData: FormData): Promise<LoginResponse> {
       });
     }
 
+    console.log("🔍 Búsqueda de usuario:", {
+      userType,
+      email,
+      encontrado: !!user,
+    });
+
     // Verificar si el usuario existe
     if (!user) {
+      console.log("❌ Usuario no encontrado");
       return {
         success: false,
         message: "Credenciales inválidas",
       };
     }
 
+    console.log("👤 Usuario encontrado:", {
+      id: user.id,
+      email: user.email,
+      nombre: `${user.firstName} ${user.lastName}`,
+      activo: user.active,
+    });
+
     // Verificar si el usuario está activo
     if (!user.active) {
+      console.log("⚠️ Usuario inactivo");
       return {
         success: false,
         message: "Usuario inactivo. Contacte al administrador",
@@ -108,14 +132,18 @@ export async function loginAction(formData: FormData): Promise<LoginResponse> {
     }
 
     // Verificar contraseña
+    console.log("🔐 Verificando contraseña...");
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isPasswordValid) {
+      console.log("❌ Contraseña incorrecta");
       return {
         success: false,
         message: "Credenciales inválidas",
       };
     }
+
+    console.log("✅ Contraseña válida");
 
     // Generar token JWT con jose
     const jwtSecret = process.env.JWT_SECRET;
@@ -129,6 +157,7 @@ export async function loginAction(formData: FormData): Promise<LoginResponse> {
     const secret = new TextEncoder().encode(jwtSecret);
 
     // Crear token con jose
+    console.log("🔑 Generando token JWT...");
     const token = await new SignJWT({
       userId: user.id,
       email: user.email,
@@ -138,6 +167,14 @@ export async function loginAction(formData: FormData): Promise<LoginResponse> {
       .setIssuedAt()
       .setExpirationTime(jwtExpiresIn)
       .sign(secret);
+
+    console.log("✅ Token generado exitosamente");
+    console.log("🎉 Login exitoso para:", {
+      userId: user.id,
+      email: user.email,
+      userType,
+      tokenPreview: token.substring(0, 20) + "...",
+    });
 
     // Retornar respuesta exitosa
     return {
@@ -153,7 +190,7 @@ export async function loginAction(formData: FormData): Promise<LoginResponse> {
       },
     };
   } catch (error) {
-    console.error("Error en loginAction:", error);
+    console.error("💥 Error en loginAction:", error);
     return {
       success: false,
       message: "Error al iniciar sesión. Intente nuevamente",
