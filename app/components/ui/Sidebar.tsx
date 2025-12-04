@@ -29,7 +29,7 @@ export default function Sidebar({ userRole, userName }: SidebarProps) {
     { name: "Pacientes", href: "/admin/patients", icon: "🧑" },
     { name: "Horarios", href: "/admin/schedules", icon: "📅" },
     { name: "Citas", href: "/admin/appointments", icon: "📋" },
-    { name: "Consultorios", href: "/admin/rooms", icon: "🏢" },
+    { name: "Consultorios", href: "/admin/consultation-rooms", icon: "🏢" },
   ];
 
   // Menú para Staff/Psicólogos

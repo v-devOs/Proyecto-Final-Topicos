@@ -196,49 +196,90 @@ export async function createOrUpdateStaffAction(
       ...(validatedData.hireDate && { hireDate: validatedData.hireDate }),
     };
 
-    // Usar upsert de Prisma
+    // Crear o actualizar según corresponda
     console.log(
       isUpdate ? "📝 Actualizando staff..." : "🆕 Creando nuevo staff..."
     );
 
-    const staff = await prisma.staff.upsert({
-      where: {
-        id: validatedData.id || -1, // Si no hay ID, usar -1 para forzar creación
-      },
-      create: {
-        ...dataToUpsert,
-        passwordHash: passwordHash!, // Requerido en creación
-      },
-      update: {
-        ...dataToUpsert,
-        ...(passwordHash && { passwordHash }), // Solo actualizar si se proporcionó nueva contraseña
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        phone: true,
-        dateOfBirth: true,
-        hireDate: true,
-        consultationRoomId: true,
-        active: true,
-        createdAt: true,
-        consultationRoom: {
-          select: {
-            code: true,
-            name: true,
+    let staff;
+
+    if (isUpdate) {
+      // Actualización
+      staff = await prisma.staff.update({
+        where: { id: validatedData.id },
+        data: {
+          ...dataToUpsert,
+          ...(passwordHash && { passwordHash }), // Solo actualizar si se proporcionó nueva contraseña
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          dateOfBirth: true,
+          hireDate: true,
+          consultationRoomId: true,
+          active: true,
+          createdAt: true,
+          consultationRoom: {
+            select: {
+              code: true,
+              name: true,
+            },
+          },
+          createdBy: {
+            select: {
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
           },
         },
-        createdBy: {
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true,
+      });
+    } else {
+      // Creación
+      if (!passwordHash) {
+        return {
+          success: false,
+          message:
+            "La contraseña es obligatoria para nuevos miembros del staff",
+        };
+      }
+
+      staff = await prisma.staff.create({
+        data: {
+          ...dataToUpsert,
+          passwordHash,
+          hireDate: validatedData.hireDate || new Date(), // Usar fecha actual si no se proporciona
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          dateOfBirth: true,
+          hireDate: true,
+          consultationRoomId: true,
+          active: true,
+          createdAt: true,
+          consultationRoom: {
+            select: {
+              code: true,
+              name: true,
+            },
+          },
+          createdBy: {
+            select: {
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
           },
         },
-      },
-    });
+      });
+    }
 
     console.log("✅ Staff guardado exitosamente:", {
       id: staff.id,
