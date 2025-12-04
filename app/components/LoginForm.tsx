@@ -21,7 +21,10 @@ export default function LoginForm() {
       const result = await loginAction(formData);
 
       if (result.success && result.token && result.user) {
-        // Guardar token en localStorage
+        // Guardar token en cookie (para que los layouts server-side puedan acceder)
+        document.cookie = `token=${result.token}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 días
+
+        // También guardar en localStorage para uso del cliente
         localStorage.setItem("auth_token", result.token);
         localStorage.setItem("user", JSON.stringify(result.user));
 

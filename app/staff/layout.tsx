@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifyToken } from "@/app/actions/auth/auth";
-import Sidebar from "../components/ui/Sidebar";
+import Sidebar from "@/app/components/ui/Sidebar";
 
 export default async function StaffLayout({
   children,
