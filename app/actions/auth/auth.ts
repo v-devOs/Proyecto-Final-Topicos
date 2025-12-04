@@ -11,7 +11,6 @@ const loginSchema = z.object({
   password: z
     .string()
     .min(6, { message: "La contraseña debe tener al menos 6 caracteres" }),
-  userType: z.enum(["admin", "staff"], { message: "Tipo de usuario inválido" }),
 });
 
 // Tipos de respuesta
@@ -39,12 +38,10 @@ export async function loginAction(formData: FormData): Promise<LoginResponse> {
     const rawData = {
       email: formData.get("email"),
       password: formData.get("password"),
-      userType: formData.get("userType"),
     };
 
     console.log("📨 Datos recibidos en loginAction:", {
       email: rawData.email,
-      userType: rawData.userType,
       hasPassword: !!rawData.password,
       passwordLength: rawData.password ? String(rawData.password).length : 0,
     });
@@ -61,10 +58,10 @@ export async function loginAction(formData: FormData): Promise<LoginResponse> {
       };
     }
 
-    const { email, password, userType } = validatedData.data;
-    console.log("✅ Datos validados correctamente:", { email, userType });
+    const { email, password } = validatedData.data;
+    console.log("✅ Datos validados correctamente:", { email });
 
-    // Buscar usuario según el tipo
+    // Buscar usuario en ambas tablas (Admin y Staff)
     let user: {
       id: number;
       email: string;
@@ -73,20 +70,28 @@ export async function loginAction(formData: FormData): Promise<LoginResponse> {
       passwordHash: string;
       active: boolean;
     } | null = null;
+    let userType: "admin" | "staff" | null = null;
 
-    if (userType === "admin") {
-      user = await prisma.admin.findUnique({
-        where: { email },
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          passwordHash: true,
-          active: true,
-        },
-      });
-    } else if (userType === "staff") {
+    // Primero buscar en Admin
+    console.log("🔍 Buscando en tabla Admin...");
+    user = await prisma.admin.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        passwordHash: true,
+        active: true,
+      },
+    });
+
+    if (user) {
+      userType = "admin";
+      console.log("✅ Usuario encontrado en Admin");
+    } else {
+      // Si no está en Admin, buscar en Staff
+      console.log("🔍 Buscando en tabla Staff...");
       user = await prisma.staff.findUnique({
         where: { email },
         select: {
@@ -98,12 +103,17 @@ export async function loginAction(formData: FormData): Promise<LoginResponse> {
           active: true,
         },
       });
+
+      if (user) {
+        userType = "staff";
+        console.log("✅ Usuario encontrado en Staff");
+      }
     }
 
-    console.log("🔍 Búsqueda de usuario:", {
-      userType,
+    console.log("🔍 Resultado de búsqueda:", {
       email,
       encontrado: !!user,
+      tipo: userType,
     });
 
     // Verificar si el usuario existe
@@ -186,7 +196,7 @@ export async function loginAction(formData: FormData): Promise<LoginResponse> {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        userType: userType,
+        userType: userType as "admin" | "staff", // Ya verificamos que no es null
       },
     };
   } catch (error) {

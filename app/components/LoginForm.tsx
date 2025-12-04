@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
   const router = useRouter();
-  const [userType, setUserType] = useState<"admin" | "staff">("admin");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -17,18 +16,17 @@ export default function LoginForm() {
     setError("");
 
     const formData = new FormData(event.currentTarget);
-    formData.append("userType", userType);
 
     try {
       const result = await loginAction(formData);
 
-      if (result.success && result.token) {
+      if (result.success && result.token && result.user) {
         // Guardar token en localStorage
         localStorage.setItem("auth_token", result.token);
         localStorage.setItem("user", JSON.stringify(result.user));
 
-        // Redirigir al dashboard según el tipo de usuario
-        if (userType === "admin") {
+        // Redirigir al dashboard según el tipo de usuario detectado automáticamente
+        if (result.user.userType === "admin") {
           router.push("/admin/dashboard");
         } else {
           router.push("/staff/dashboard");
@@ -50,34 +48,8 @@ export default function LoginForm() {
         <div className="mb-8 text-center">
           <h2 className="text-3xl font-bold text-gray-900">Iniciar Sesión</h2>
           <p className="mt-2 text-sm text-gray-600">
-            Accede a tu cuenta para continuar
+            Ingresa tus credenciales para acceder al sistema
           </p>
-        </div>
-
-        {/* Toggle de tipo de usuario */}
-        <div className="mb-6">
-          <div className="grid grid-cols-2 gap-2 rounded-lg bg-gray-100 p-1">
-            <button
-              type="button"
-              onClick={() => setUserType("admin")}
-              className={`rounded-md px-4 py-2 text-sm font-medium transition-all ${userType === "admin"
-                ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md"
-                : "text-gray-600 hover:text-gray-900"
-                }`}
-            >
-              Administrador
-            </button>
-            <button
-              type="button"
-              onClick={() => setUserType("staff")}
-              className={`rounded-md px-4 py-2 text-sm font-medium transition-all ${userType === "staff"
-                ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md"
-                : "text-gray-600 hover:text-gray-900"
-                }`}
-            >
-              Psicólogo
-            </button>
-          </div>
         </div>
 
         {/* Mensaje de error */}
