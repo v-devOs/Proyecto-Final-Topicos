@@ -1,15 +1,143 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Psychology Staff Management System
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../app/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// =============================================
+// MODELS
+// =============================================
+
+model ConsultationRoom {
+  id           Int           @id @default(autoincrement())
+  code         String        @unique @db.VarChar(20)
+  name         String        @db.VarChar(100)
+  location     String        @db.VarChar(200)
+  capacity     Int           @default(1)
+  active       Boolean       @default(true)
+  staff        Staff[]
+  appointments Appointment[]
+
+  @@map("consultation_rooms")
+}
+
+model Admin {
+  id           Int      @id @default(autoincrement())
+  firstName    String   @map("first_name") @db.VarChar(100)
+  lastName     String   @map("last_name") @db.VarChar(100)
+  email        String   @unique @db.VarChar(150)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp()
+  active       Boolean  @default(true)
+  createdStaff Staff[]  @relation("AdminCreatedStaff")
+
+  @@index([email])
+  @@map("admins")
+}
+
+model Staff {
+  id                 Int       @id @default(autoincrement())
+  firstName          String    @map("first_name") @db.VarChar(100)
+  lastName           String    @map("last_name") @db.VarChar(100)
+  email              String    @unique @db.VarChar(150)
+  passwordHash       String    @map("password_hash") @db.VarChar(255)
+  phone              String?   @db.VarChar(20)
+  dateOfBirth        DateTime? @map("date_of_birth") @db.Date
+  hireDate           DateTime  @default(now()) @map("hire_date") @db.Date
+  consultationRoomId Int?      @map("consultation_room_id")
+  active             Boolean   @default(true)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamp()
+  createdById        Int?      @map("created_by")
+
+  consultationRoom ConsultationRoom? @relation(fields: [consultationRoomId], references: [id])
+  createdBy        Admin?            @relation("AdminCreatedStaff", fields: [createdById], references: [id])
+  schedules        Schedule[]
+  appointments     Appointment[]
+  assignedPatients Patient[]
+
+  @@index([email])
+  @@index([consultationRoomId])
+  @@index([active])
+  @@map("staff")
+}
+
+model Patient {
+  id                   Int      @id @default(autoincrement())
+  email                String   @unique @db.VarChar(150)
+  registeredDate       DateTime @default(now()) @map("registered_date") @db.Date
+  active               Boolean  @default(true)
+  assignedPsychologist Int?     @map("assigned_psychologist")
+
+  psychologist Staff?        @relation(fields: [assignedPsychologist], references: [id])
+  appointments Appointment[]
+
+  @@index([email])
+  @@index([assignedPsychologist])
+  @@index([active])
+  @@map("patients")
+}
+
+model Schedule {
+  id        Int      @id @default(autoincrement())
+  staffId   Int      @map("staff_id")
+  dayOfWeek Int      @map("day_of_week")
+  startTime DateTime @map("start_time") @db.Time()
+  endTime   DateTime @map("end_time") @db.Time()
+  available Boolean  @default(true)
+
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, dayOfWeek, startTime])
+  @@index([staffId])
+  @@index([dayOfWeek])
+  @@map("schedules")
+}
+
+model Appointment {
+  id                 Int               @id @default(autoincrement())
+  patientId          Int               @map("patient_id")
+  staffId            Int               @map("staff_id")
+  appointmentDate    DateTime          @map("appointment_date") @db.Date
+  startTime          DateTime          @map("start_time") @db.Time()
+  endTime            DateTime          @map("end_time") @db.Time()
+  status             AppointmentStatus @default(pending)
+  consultationType   String?           @map("consultation_type") @db.VarChar(50)
+  notes              String?           @db.Text
+  consultationRoomId Int?              @map("consultation_room_id")
+  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamp()
+  createdBy          Int?              @map("created_by")
+
+  patient          Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  staff            Staff             @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  consultationRoom ConsultationRoom? @relation(fields: [consultationRoomId], references: [id])
+
+  @@unique([staffId, appointmentDate, startTime])
+  @@index([staffId, appointmentDate])
+  @@index([patientId, appointmentDate])
+  @@index([status])
+  @@index([staffId, status])
+  @@map("appointments")
+}
+
+// =============================================
+// ENUMS
+// =============================================
+
+enum AppointmentStatus {
+  pending
+  confirmed
+  completed
+  cancelled
+  no_show
+
+  @@map("appointment_status")
 }
