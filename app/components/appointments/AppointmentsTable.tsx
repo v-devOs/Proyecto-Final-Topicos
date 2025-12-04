@@ -14,6 +14,9 @@ type Appointment = {
   createdAt: Date;
   patient: {
     id: number;
+    firstName: string;
+    lastName: string;
+    nuControl: string;
     email: string;
   };
   staff: {
@@ -108,9 +111,12 @@ export default function AppointmentsTable({
               <tr key={appointment.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900">
-                    {appointment.patient.email}
+                    {appointment.patient.firstName} {appointment.patient.lastName}
                   </div>
-                  <div className="text-xs text-gray-500">ID: {appointment.patientId}</div>
+                  <div className="text-xs text-gray-500">
+                    Control: {appointment.patient.nuControl}
+                  </div>
+                  <div className="text-xs text-gray-400">{appointment.patient.email}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">

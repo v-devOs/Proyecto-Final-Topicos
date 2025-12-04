@@ -22,6 +22,9 @@ type Appointment = {
   createdAt: Date;
   patient: {
     id: number;
+    firstName: string;
+    lastName: string;
+    nuControl: string;
     email: string;
   };
   staff: {

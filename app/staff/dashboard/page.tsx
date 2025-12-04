@@ -8,7 +8,7 @@ import prisma from "@/app/lib/prisma";
 export default async function StaffDashboard() {
   // Obtener el staffId del token
   const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
+  const token = cookieStore.get("auth_token")?.value;
 
   if (!token) {
     redirect("/");
@@ -188,12 +188,12 @@ export default async function StaffDashboard() {
               <div
                 key={appointment.id}
                 className={`flex items-center justify-between p-4 rounded-lg border-l-4 ${appointment.status === "completed"
-                    ? "bg-green-50 border-green-500"
-                    : appointment.status === "confirmed"
-                      ? "bg-blue-50 border-blue-500"
-                      : appointment.status === "cancelled"
-                        ? "bg-red-50 border-red-500"
-                        : "bg-yellow-50 border-yellow-500"
+                  ? "bg-green-50 border-green-500"
+                  : appointment.status === "confirmed"
+                    ? "bg-blue-50 border-blue-500"
+                    : appointment.status === "cancelled"
+                      ? "bg-red-50 border-red-500"
+                      : "bg-yellow-50 border-yellow-500"
                   }`}
               >
                 <div className="flex items-center gap-4">
@@ -220,9 +220,9 @@ export default async function StaffDashboard() {
                 </div>
                 <div className="flex flex-col gap-1">
                   <span className={`px-2 py-1 text-xs rounded-full text-center ${appointment.status === "completed" ? "bg-green-100 text-green-700" :
-                      appointment.status === "confirmed" ? "bg-blue-100 text-blue-700" :
-                        appointment.status === "cancelled" ? "bg-red-100 text-red-700" :
-                          "bg-yellow-100 text-yellow-700"
+                    appointment.status === "confirmed" ? "bg-blue-100 text-blue-700" :
+                      appointment.status === "cancelled" ? "bg-red-100 text-red-700" :
+                        "bg-yellow-100 text-yellow-700"
                     }`}>
                     {appointment.status === "completed" ? "Completada" :
                       appointment.status === "confirmed" ? "Confirmada" :

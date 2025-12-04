@@ -17,6 +17,9 @@ type Appointment = {
   consultationRoomId: number | null;
   patient: {
     id: number;
+    firstName: string;
+    lastName: string;
+    nuControl: string;
     email: string;
   };
   consultationRoom: {

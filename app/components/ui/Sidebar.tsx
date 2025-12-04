@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 interface MenuItem {
   name: string;
@@ -17,7 +17,6 @@ interface SidebarProps {
 
 export default function Sidebar({ userRole, userName }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -45,9 +44,16 @@ export default function Sidebar({ userRole, userName }: SidebarProps) {
   const menuItems = userRole === "admin" ? adminMenu : staffMenu;
 
   const handleLogout = async () => {
-    // Limpiar cookie/token
+    // Limpiar todas las cookies de autenticación
+    document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    router.push("/");
+
+    // Limpiar localStorage
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("user");
+
+    // Redirigir al login con recarga completa para limpiar estado del servidor
+    window.location.href = "/";
   };
 
   return (

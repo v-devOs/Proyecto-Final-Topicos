@@ -6,6 +6,21 @@ import prisma from "@/app/lib/prisma";
 // Schema de validación para crear o actualizar patient
 const patientSchema = z.object({
   id: z.number().optional(), // Si existe ID, es actualización
+  firstName: z
+    .string()
+    .min(1, "El nombre es requerido")
+    .max(100, "El nombre no puede exceder 100 caracteres")
+    .trim(),
+  lastName: z
+    .string()
+    .min(1, "El apellido es requerido")
+    .max(100, "El apellido no puede exceder 100 caracteres")
+    .trim(),
+  nuControl: z
+    .string()
+    .min(1, "El número de control es requerido")
+    .max(50, "El número de control no puede exceder 50 caracteres")
+    .trim(),
   email: z
     .string()
     .email("Email inválido")
@@ -33,6 +48,9 @@ interface ActionResponse {
   message: string;
   data?: {
     id: number;
+    firstName: string;
+    lastName: string;
+    nuControl: string;
     email: string;
     registeredDate: Date;
     active: boolean;
@@ -90,6 +108,24 @@ export async function createOrUpdatePatientAction(
       }
     }
 
+    // Verificar si el número de control ya existe
+    if (!isUpdate || validatedData.nuControl) {
+      const existingNuControl = await prisma.patient.findFirst({
+        where: {
+          nuControl: validatedData.nuControl,
+          ...(isUpdate && { NOT: { id: validatedData.id } }),
+        },
+      });
+
+      if (existingNuControl) {
+        console.log("⚠️ Número de control ya existe:", validatedData.nuControl);
+        return {
+          success: false,
+          message: "Ya existe un paciente con este número de control",
+        };
+      }
+    }
+
     // Verificar que el psicólogo asignado existe y está activo si se proporciona
     if (validatedData.assignedPsychologist) {
       const psychologist = await prisma.staff.findUnique({
@@ -121,6 +157,9 @@ export async function createOrUpdatePatientAction(
 
     // Preparar datos para upsert
     const dataToUpsert = {
+      firstName: validatedData.firstName,
+      lastName: validatedData.lastName,
+      nuControl: validatedData.nuControl,
       email: validatedData.email,
       active: validatedData.active ?? true,
       assignedPsychologist: validatedData.assignedPsychologist ?? null,
@@ -142,6 +181,9 @@ export async function createOrUpdatePatientAction(
       update: dataToUpsert,
       select: {
         id: true,
+        firstName: true,
+        lastName: true,
+        nuControl: true,
         email: true,
         registeredDate: true,
         active: true,
@@ -158,6 +200,8 @@ export async function createOrUpdatePatientAction(
 
     console.log("✅ Paciente guardado exitosamente:", {
       id: patient.id,
+      name: `${patient.firstName} ${patient.lastName}`,
+      nuControl: patient.nuControl,
       email: patient.email,
       psychologist: patient.psychologist
         ? `${patient.psychologist.firstName} ${patient.psychologist.lastName}`
@@ -171,6 +215,9 @@ export async function createOrUpdatePatientAction(
         : "Paciente creado exitosamente",
       data: {
         id: patient.id,
+        firstName: patient.firstName,
+        lastName: patient.lastName,
+        nuControl: patient.nuControl,
         email: patient.email,
         registeredDate: patient.registeredDate,
         active: patient.active,

@@ -72,6 +72,9 @@ model Staff {
 
 model Patient {
   id                   Int      @id @default(autoincrement())
+  firstName            String   @map("first_name") @db.VarChar(100)
+  lastName             String   @map("last_name") @db.VarChar(100)
+  nuControl            String   @unique @map("nu_control") @db.VarChar(50)
   email                String   @unique @db.VarChar(150)
   registeredDate       DateTime @default(now()) @map("registered_date") @db.Date
   active               Boolean  @default(true)
@@ -81,6 +84,7 @@ model Patient {
   appointments Appointment[]
 
   @@index([email])
+  @@index([nuControl])
   @@index([assignedPsychologist])
   @@index([active])
   @@map("patients")

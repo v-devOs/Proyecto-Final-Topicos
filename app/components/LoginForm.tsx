@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import { loginAction } from "@/app/actions/auth/auth";
-import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -21,19 +19,22 @@ export default function LoginForm() {
       const result = await loginAction(formData);
 
       if (result.success && result.token && result.user) {
+        // Limpiar cookies antiguas primero
+        document.cookie = "token=; path=/; max-age=0";
+        document.cookie = "auth_token=; path=/; max-age=0";
+
         // Guardar token en cookie (para que los layouts server-side puedan acceder)
-        document.cookie = `auth_token=${result.token}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 días
+        // Usar SameSite=Lax para mayor compatibilidad
+        document.cookie = `auth_token=${result.token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
 
         // También guardar en localStorage para uso del cliente
         localStorage.setItem("auth_token", result.token);
         localStorage.setItem("user", JSON.stringify(result.user));
 
-        // Redirigir al dashboard según el tipo de usuario detectado automáticamente
-        if (result.user.userType === "admin") {
-          router.push("/admin/dashboard");
-        } else {
-          router.push("/staff/dashboard");
-        }
+        // Forzar recarga completa de la página para asegurar que el layout lea la cookie
+        window.location.href = result.user.userType === "admin"
+          ? "/admin/dashboard"
+          : "/staff/dashboard";
       } else {
         setError(result.message);
       }

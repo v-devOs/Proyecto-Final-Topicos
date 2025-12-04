@@ -14,6 +14,9 @@ type Appointment = {
   consultationRoomId: number | null;
   patient: {
     id: number;
+    firstName: string;
+    lastName: string;
+    nuControl: string;
     email: string;
   };
   consultationRoom: {
@@ -122,17 +125,29 @@ export default function MyAppointmentModal({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Información del paciente (solo lectura) */}
-          <div className="bg-emerald-50 p-4 rounded-lg">
-            <h3 className="text-sm font-semibold text-emerald-800 mb-2">
+          <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
+            <h3 className="text-sm font-semibold text-emerald-800 mb-3">
               👤 Información del Paciente
             </h3>
-            <div className="text-sm text-emerald-700">
-              <p>
-                <strong>Email:</strong> {appointment.patient.email}
-              </p>
-              <p>
-                <strong>ID:</strong> {appointment.patientId}
-              </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-emerald-700">
+              <div>
+                <strong>Nombre completo:</strong>
+                <div className="text-emerald-900 font-medium">
+                  {appointment.patient.firstName} {appointment.patient.lastName}
+                </div>
+              </div>
+              <div>
+                <strong>No. Control:</strong>
+                <div className="text-emerald-900 font-medium">
+                  {appointment.patient.nuControl}
+                </div>
+              </div>
+              <div className="md:col-span-2">
+                <strong>Email:</strong>
+                <div className="text-emerald-900">
+                  {appointment.patient.email}
+                </div>
+              </div>
             </div>
           </div>
 

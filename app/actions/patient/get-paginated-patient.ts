@@ -10,7 +10,9 @@ const paginationSchema = z.object({
   search: z.string().optional(),
   activeOnly: z.boolean().default(false),
   assignedPsychologist: z.number().positive().optional(),
-  sortBy: z.enum(["email", "registeredDate"]).default("registeredDate"),
+  sortBy: z
+    .enum(["firstName", "lastName", "nuControl", "email", "registeredDate"])
+    .default("registeredDate"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });
 
@@ -20,6 +22,9 @@ type PatientPaginatedResponse = {
   data?: {
     patients: Array<{
       id: number;
+      firstName: string;
+      lastName: string;
+      nuControl: string;
       email: string;
       registeredDate: Date;
       active: boolean;
@@ -57,7 +62,7 @@ export async function getPaginatedPatients(params?: {
   search?: string;
   activeOnly?: boolean;
   assignedPsychologist?: number;
-  sortBy?: "email" | "registeredDate";
+  sortBy?: "firstName" | "lastName" | "nuControl" | "email" | "registeredDate";
   sortOrder?: "asc" | "desc";
 }): Promise<PatientPaginatedResponse> {
   try {
@@ -90,6 +95,9 @@ export async function getPaginatedPatients(params?: {
       active?: boolean;
       assignedPsychologist?: number | null;
       OR?: Array<{
+        firstName?: { contains: string; mode: "insensitive" };
+        lastName?: { contains: string; mode: "insensitive" };
+        nuControl?: { contains: string; mode: "insensitive" };
         email?: { contains: string; mode: "insensitive" };
       }>;
     } = {};
@@ -104,9 +112,12 @@ export async function getPaginatedPatients(params?: {
       whereConditions.assignedPsychologist = assignedPsychologist;
     }
 
-    // Búsqueda por texto (email)
+    // Búsqueda por texto (firstName, lastName, nuControl, email)
     if (search && search.trim() !== "") {
       whereConditions.OR = [
+        { firstName: { contains: search, mode: "insensitive" } },
+        { lastName: { contains: search, mode: "insensitive" } },
+        { nuControl: { contains: search, mode: "insensitive" } },
         { email: { contains: search, mode: "insensitive" } },
       ];
     }
@@ -152,6 +163,9 @@ export async function getPaginatedPatients(params?: {
       data: {
         patients: patients.map((patient) => ({
           id: patient.id,
+          firstName: patient.firstName,
+          lastName: patient.lastName,
+          nuControl: patient.nuControl,
           email: patient.email,
           registeredDate: patient.registeredDate,
           active: patient.active,

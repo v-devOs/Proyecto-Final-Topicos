@@ -56,6 +56,9 @@ type AppointmentPaginatedResponse = {
       createdAt: Date;
       patient: {
         id: number;
+        firstName: string;
+        lastName: string;
+        nuControl: string;
         email: string;
       };
       staff: {
@@ -182,6 +185,9 @@ export async function getPaginatedAppointments(params?: {
         patient: {
           select: {
             id: true,
+            firstName: true,
+            lastName: true,
+            nuControl: true,
             email: true,
           },
         },
@@ -227,6 +233,9 @@ export async function getPaginatedAppointments(params?: {
           createdAt: appointment.createdAt,
           patient: {
             id: appointment.patient.id,
+            firstName: appointment.patient.firstName,
+            lastName: appointment.patient.lastName,
+            nuControl: appointment.patient.nuControl,
             email: appointment.patient.email,
           },
           staff: {

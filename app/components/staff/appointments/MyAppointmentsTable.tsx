@@ -12,6 +12,9 @@ type Appointment = {
   consultationRoomId: number | null;
   patient: {
     id: number;
+    firstName: string;
+    lastName: string;
+    nuControl: string;
     email: string;
   };
   consultationRoom: {
@@ -119,9 +122,16 @@ export default function MyAppointmentsTable({
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <span className="text-lg">👤</span>
-                      <span>{appointment.patient.email}</span>
+                    <div className="flex flex-col gap-1 text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">👤</span>
+                        <span className="font-semibold text-gray-800">
+                          {appointment.patient.firstName} {appointment.patient.lastName}
+                        </span>
+                      </div>
+                      <div className="ml-7 text-xs text-gray-500">
+                        Control: {appointment.patient.nuControl} • {appointment.patient.email}
+                      </div>
                     </div>
 
                     {appointment.consultationRoom && (
@@ -162,12 +172,12 @@ export default function MyAppointmentsTable({
                             key={action}
                             onClick={() => onUpdateStatus(appointment.id, action)}
                             className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${action === "confirmed"
-                                ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                : action === "completed"
-                                  ? "bg-green-100 text-green-700 hover:bg-green-200"
-                                  : action === "cancelled"
-                                    ? "bg-red-100 text-red-700 hover:bg-red-200"
-                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                              ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                              : action === "completed"
+                                ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                : action === "cancelled"
+                                  ? "bg-red-100 text-red-700 hover:bg-red-200"
+                                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                               }`}
                           >
                             {STATUS_LABELS[action]?.label}

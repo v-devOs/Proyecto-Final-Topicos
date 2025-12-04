@@ -1,6 +1,25 @@
 import LoginForm from "@/app/components/LoginForm";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { verifyToken } from "@/app/actions/auth/auth";
 
-export default function Home() {
+export default async function Home() {
+  // Verificar si ya hay una sesión activa
+  const cookieStore = await cookies();
+  const token = cookieStore.get("auth_token")?.value;
+
+  if (token) {
+    const verification = await verifyToken(token);
+    if (verification.success && verification.user) {
+      // Redirigir al dashboard según el tipo de usuario
+      if (verification.user.userType === "admin") {
+        redirect("/admin/dashboard");
+      } else {
+        redirect("/staff/dashboard");
+      }
+    }
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50">
       <div className="w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
